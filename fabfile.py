@@ -10,4 +10,4 @@ def init():
 
 def deploy():
     with cd('/home/zhigang/zhigang.org/public/google-chinese-lunar-calendar'):
-        run('hg pull -u')
+        run('git pull')
