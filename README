@@ -1,0 +1,20 @@
+========
+谷歌农历
+========
+
+* 原因：出门在外，居然错过了父母的生日。
+
+* 功能：在Google Calendar上按照农历添加重复事件（只支持以年为单位）。主要目的就是计划亲朋好友农历生日。
+
+* 在线访问： http://zhigang.org/google-chinese-lunar-calendar/
+
+* 源代码： https://github.com/zhigang/google-chinese-lunar-calendar
+
+* 源代码使用的开源协议： Apache License <http://www.apache.org/licenses/LICENSE-2.0>
+
+* 使用的其他开源软件代码：
+
+  - https://github.com/ruanyf/Google-Calendar-Lite
+  - calendar-converter: https://github.com/StuPig/calendar-converter
+
+* 类似解决方法: 如何搞定Google Calendar的农历循环提醒: http://www.web20share.com/2009/09/google-calendar-lunnar.html

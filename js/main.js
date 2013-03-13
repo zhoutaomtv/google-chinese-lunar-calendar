@@ -1,40 +1,44 @@
+/* =========================================================================
+ * Copyright 2013 Yifeng Ruan <yifeng.ruan@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * =======================================================================*/
+ 
 /* 网页元素绑定事件 */
-
 jQuery(document).on('click','#button-login',function(){
 
-			$("#modal-progress-bar").modal({"keyboard":false,"show":true}); 
+    $("#modal-progress-bar").modal({"keyboard":false,"show":true});
+    $('#modal-progress-bar .bar').width(10);
 
-			$('#modal-progress-bar .bar').width(10);
+    var progress = setInterval(function() {
+        var $bar = $('#modal-progress-bar .bar');
+        var progressWidth = $("#modal-progress-bar").width();
 
-			var progress = setInterval(function() {
+        if ($bar.width() >= progressWidth) {
+            clearInterval(progress);
+            $('.progress').removeClass('active');
+        } else {
+            $bar.width($bar.width()+parseInt(progressWidth/30));
+        }
 
-				var $bar = $('#modal-progress-bar .bar');
+        var percent = parseInt(($bar.width()/progressWidth)*100);
 
-				var progressWidth = $("#modal-progress-bar").width();
+        percent = percent>100?100:percent;
+        $bar.text(percent + "%");
+        }, 10);
+    window.location = Calendar.getLoginUrl();
 
-				if ($bar.width() >= progressWidth) {
-
-					clearInterval(progress);
-
-					$('.progress').removeClass('active');
-
-				} else {
-
-				    $bar.width($bar.width()+parseInt(progressWidth/30));
-
-				}
-
-				var percent = parseInt(($bar.width()/progressWidth)*100);
-
-				percent = percent>100?100:percent;
-
-				$bar.text(percent + "%");
-
-			}, 10);
-
-			window.location = Calendar.getLoginUrl();
-
-		});
+});
 
 jQuery(document).on('click',"#button-add-event",function(){Utility.addEvent();});
 
@@ -42,10 +46,10 @@ jQuery(document).on('click','#dpmin',function(){ $("#dpmin").datepicker(); });
 
 jQuery(document).on('click',"#timemin",function(){
 
-	$("#timemin").attr({
-		'data-date':$('#dpmin').attr('data-date'),
-		'data-date-format':'yyyy-mm-dd'
-		}).datepicker();
+    $("#timemin").attr({
+        'data-date':$('#dpmin').attr('data-date'),
+        'data-date-format':'yyyy-mm-dd'
+        }).datepicker();
 
 });
 
@@ -53,10 +57,10 @@ jQuery(document).on('click',"#dpmax", function(){ $("#dpmax").datepicker();});
 
 jQuery(document).on('click',"#timemax",function(){
 
-	$("#timemax").attr({
-		'data-date':$('#dpmax').attr('data-date'),
-		'data-date-format':'yyyy-mm-dd'
-		}).datepicker();
+    $("#timemax").attr({
+        'data-date':$('#dpmax').attr('data-date'),
+        'data-date-format':'yyyy-mm-dd'
+        }).datepicker();
 
 });
 
@@ -64,10 +68,10 @@ jQuery(document).on('click','#dpstart',function(){ $("#dpstart").datepicker(); }
 
 jQuery(document).on('click',"#timestart",function(){
 
-	$("#timestart").attr({
-		'data-date':$('#dpstart').attr('data-date'),
-		'data-date-format':'yyyy-mm-dd'
-		}).datepicker();
+    $("#timestart").attr({
+        'data-date':$('#dpstart').attr('data-date'),
+        'data-date-format':'yyyy-mm-dd'
+        }).datepicker();
 
 });
 
@@ -75,1008 +79,658 @@ jQuery(document).on('click',"#dpend", function(){ $("#dpend").datepicker();});
 
 jQuery(document).on('click',"#timeend",function(){
 
-	$("#timeend").attr({
-		'data-date':$('#dpend').attr('data-date'),
-		'data-date-format':'yyyy-mm-dd'
-		}).datepicker();
+    $("#timeend").attr({
+        'data-date':$('#dpend').attr('data-date'),
+        'data-date-format':'yyyy-mm-dd'
+        }).datepicker();
 
 });
 
 jQuery(document).on('click','#button-insert-event',function(){
-			
-			if(!Utility.checkEventForm()) return false;
 
-			var options = Utility.insertEvent();
+    if(!Utility.checkEventForm())
+        return false;
+    var options = Utility.insertEvent();
+    Calendar.insertRecurringEvents(options);
+    $('#event-new').modal('hide');
+    Utility.refreshEventsList('add-new-event');
 
-			Calendar.insertEvent(options);
-
-			$('#event-new').modal('hide');
-
-			Utility.refreshEventsList('add-new-event');
-			
-			return ;
-			
-			});
+});
 
 jQuery(document).on('click','.button-delete',function(event){
-			
-			Utility.confirmEventDelete($(this).attr('data-id'));
-			
-			});
+
+    Utility.confirmEventDelete($(this).attr('data-id'));
+
+});
 
 jQuery(document).on('click','#button-confirm-event-delete',function(event){
 
-			Utility.eventDelete($(this).attr('data-id'));
+    Utility.eventDelete($(this).attr('data-id'));
 
-			});
+});
 
 jQuery(document).on('click','.button-edit',function(event){
-			
-			Utility.confirmEventEdit($(this).data('id'));
-			
-			});
+
+    Utility.confirmEventEdit($(this).data('id'));
+
+});
 
 /* 网页加载完成后触发的事件 */
-   
 jQuery(document).ready(function(){
 
     // 解析URL
-
-	var url = Utility.parseUrl();
-
-	var hash = Utility.parseHash(url['hash']);
+    var url = Utility.parseUrl();
+    var hash = Utility.parseHash(url['hash']);
 
     // 用户未登录
-
-    if (hash["state"]!=="login"){
-      
-    var loginMessage = $("#login-message");
-
-    loginMessage.hide();
-
-    var login = $("#login");
-
-    // 判断是否支持垮域请求
-
-    if (!XMLHttpRequest || !("withCredentials" in new XMLHttpRequest()) ){
- 
-      login.hide();
-
-      loginMessage.show();
-
-      return 0;
-
-    }
-
-      return ;
-
-    }
-
-// 用户点击登录按钮后，从Google跳转回来
-
-      var welcome = $("#welcome");
-
-      welcome.hide();
-
-      var content = $("#content");
-
-      content.show();
-
-      // 如果没有获得用户授权
-
-      if(!hash["access_token"]){
-        $("#content-result").hide();
-
-        var message;
-
-        if (hash["error"]){
-          message = "未获得授权。"+hash["error"];
-        } else {
-          message = "请正常登录。";
+    if (hash["state"]!=="login") {
+        var loginMessage = $("#login-message");
+        loginMessage.hide();
+        var login = $("#login");
+    
+        // 判断是否支持垮域请求
+        if (!XMLHttpRequest || !("withCredentials" in new XMLHttpRequest()) ){
+            login.hide();
+            loginMessage.show();
+            return 0;
         }
-
-        message = "<strong>提示：</strong> "+ message + "<a href=\""+url["protocol"]+"//"+url["host"]+url["path"] +"\">[返回]</a>";
-
-        console.info(message);
-
-        $("#content-message").show().find(".alert").addClass("alert-error").html(message);
-
         return ;
+    }
 
-      }
+    // 用户点击登录按钮后，从Google跳转回来
+    var welcome = $("#welcome");
+    welcome.hide();
+    var content = $("#content");
+    content.show();
 
-// 已经获得用户授权
-
-        var access_token = hash["access_token"];
-
-        // 此处省略验证access token的步骤，将来可以在Calendar对象中部署
-
-        // 读出日历列表
-
-        // console.info(access_token);
-
-        Calendar.getCalendarList(access_token);
-
-        // console.dir(response);
-
-        var response = Calendar.listResponse;
-
-        // 如果取回的Calendar List有错误
-
-        if (!response["items"]){
-          var errorMessage = (response["error"]?response["error"]["message"]:"返回结果有错误。");
-
-          errorMessage = "<strong>提示：</strong>"+errorMessage+ "<a href=\""+url["protocol"]+"//"+url["host"]+url["path"] +"\">[返回]</a>";
-
-        $("#content-message").show().find(".alert").addClass("alert-error").html(errorMessage);
-      return ;
+    // 如果没有获得用户授权
+    if(!hash["access_token"]) {
+        $("#content-result").hide();
+        var message;
+        if (hash["error"]){
+            message = "未获得授权。"+hash["error"];
+        } else {
+            message = "请正常登录。";
         }
+        message = "<strong>提示：</strong> "+ message + "<a href=\""+url["protocol"]+"//"+url["host"]+url["path"] +"\">[返回]</a>";
+        // console.info(message);
+        $("#content-message").show().find(".alert").addClass("alert-error").html(message);
+        return ;
+    }
 
-// 已经取回了日历列表
+    // 已经获得用户授权
+    var access_token = hash["access_token"];
 
+    // 此处省略验证access token的步骤，将来可以在Calendar对象中部署
+    // 读出日历列表
+    // console.info(access_token);
+    Calendar.getCalendarList(access_token);
+    // console.dir(response);
+    var response = Calendar.listResponse;
+
+    // 如果取回的Calendar List有错误
+    if (!response["items"]){
+        var errorMessage = (response["error"]?response["error"]["message"]:"返回结果有错误。");
+        errorMessage = "<strong>提示：</strong>"+errorMessage+ "<a href=\""+url["protocol"]+"//"+url["host"]+url["path"] +"\">[返回]</a>";
+        $("#content-message").show().find(".alert").addClass("alert-error").html(errorMessage);
+        return ;
+    }
+
+    // 已经取回了日历列表
     Calendar.setListEntry(response["items"]);
 
-// 如果日历列表项为空
-
+    // 如果日历列表项为空
     if(Calendar.listEntry.length===0){
-      var infoMessage = "<strong>提示：</strong>您尚未创建任何日历。<a href=\""+url["protocol"]+"//"+url["host"]+url["path"] +"\">[返回]</a>";
-
-      $("#content-message").show().find(".alert").addClass("alert-info").html(infoMessage);
-
+        var infoMessage = "<strong>提示：</strong>您尚未创建任何日历。<a href=\""+url["protocol"]+"//"+url["host"]+url["path"] +"\">[返回]</a>";
+        $("#content-message").show().find(".alert").addClass("alert-info").html(infoMessage);
         return ;
-
     }
 
-// 确定存在日历列表项
+    // 确定存在日历列表项
+    var listEntrySelect = "<select>";
 
-   var listEntrySelect = "<select>";
-
-   for(i in Calendar.listEntry){
-
-     listEntrySelect = listEntrySelect + "<option value=\"" + Calendar.listEntry[i]["id"] + "\" " + (Calendar.listEntry[i]["main"]?"selected":"")  + " >"+Calendar.listEntry[i]["summary"]+"</option>"; 
-
+    for(i in Calendar.listEntry){
+       listEntrySelect = listEntrySelect + "<option value=\"" + Calendar.listEntry[i]["id"] + "\" " + (Calendar.listEntry[i]["main"]?"selected":"")  + " >"+Calendar.listEntry[i]["summary"]+"</option>";
     }
 
     listEntrySelect = listEntrySelect + "</select>";
-
-    listEntrySelect = listEntrySelect + "<div class=\"pull-right\"><a class=\"text-error\" id=\"button-add-event\">[添加新事件]</a> <a href=\""+url["protocol"]+"//"+url["host"]+url["path"] +"\">[退出]</a></div>";
-
+    listEntrySelect = listEntrySelect + "<div class=\"pull-right\"><a class=\"text-error\" id=\"button-add-event\">[添加农历循环事件]</a> <a href=\""+url["protocol"]+"//"+url["host"]+url["path"] +"\">[退出]</a></div>";
     $("#calendar-list").html("日历列表 "+listEntrySelect);
 
     // 绑定日历列表的change事件
-
     $("#calendar-list").find("select").change(function(event){
-        
         Utility.resetCurrentDate();
-
         Calendar.setCurrentCalendar(this.value);
-
         Utility.refreshEventsList();
-        
-        });
-
-    // 判断是否存在主日历
-
-    if (!Calendar.currentCalendar){
-
-      Calendar.setCurrentCalendar($("#calendar-list").find("option")[0].value);
-
-    }
-
-// 确定存在主日历
-
-	Utility.resetCurrentDate();
-
-	$("#calendar-date").find("button").click(function(event){
-
-		event.preventDefault();
-    
-		Utility.refreshEventsList();
-
     });
 
- Utility.refreshEventsList();
+    // 判断是否存在主日历
+    if (!Calendar.currentCalendar){
+        Calendar.setCurrentCalendar($("#calendar-list").find("option")[0].value);
+    }
+
+    // 确定存在主日历
+    Utility.resetCurrentDate();
+    $("#calendar-date").find("button").click(function(event){
+        event.preventDefault();
+        Utility.refreshEventsList();
+    });
+
+    Utility.refreshEventsList();
 
 });
 
 // 定义主函数Calendar
-
 var Calendar = (function(window,$){
-    
+
     var Calendar = {};
-   
 
     // Google的登录网址
     var _loginUrl = "";
-
     var _loginEndPoint = "https://accounts.google.com/o/oauth2/auth";
-
     var _loginArray = new Array();
-
     _loginArray["scope"] = "https://www.googleapis.com/auth/calendar";
-
-    _loginArray["redirect_uri"] = "http://www.ruanyifeng.com/webapp/calendar/";
-
+    _loginArray["redirect_uri"] = "http://zhigang.org/google-chinese-lunar-calendar/";
     _loginArray["response_type"] = "token";
-
     _loginArray["state"] = "login";
-    _loginArray["client_id"] = "497007402964.apps.googleusercontent.com";
-
+    _loginArray["client_id"] = "538409934135-v12epoj5lml37i0pijkafrdtre6eune0.apps.googleusercontent.com";
     var _loginUrlArray = new Array();
 
     // 构建登录网址
-
     Calendar.getLoginUrl = function(){
-    
-      for(x in _loginArray){
-
-        _loginUrlArray.push(x+"="+encodeURIComponent(_loginArray[x]));
-
-      }
-
-      _loginUrl = _loginEndPoint+"?"+_loginUrlArray.join("&");  
-    
-      return _loginUrl; 
-    
+        for(x in _loginArray){
+            _loginUrlArray.push(x+"="+encodeURIComponent(_loginArray[x]));
+        }
+        _loginUrl = _loginEndPoint+"?"+_loginUrlArray.join("&");
+        return _loginUrl;
     };
 
     var _access_token = '';
 
-
-
     // 读取日历列表
-
     Calendar.listResponse = '';
-
     Calendar.getCalendarList = function(access_token){
-
-      var _calendarListEndPoint = "https://www.googleapis.com/calendar/v3/users/me/calendarList";
-
-      _access_token = access_token;
-
-      var _calendarListUrl = _calendarListEndPoint+"?access_code="+access_token;
-
-      // console.info(_calendarListUrl);
-
-      var req = new XMLHttpRequest();
-
-      req.open('GET',_calendarListEndPoint,false);
-
-      req.setRequestHeader("Authorization","Bearer "+access_token);
-
-      req.onreadystatechange = function (e) {
-
-        if (req.readyState == 4) {
-
-          // console.info("response:"+req.responseText);
-
-          Calendar.listResponse = $.parseJSON(req.responseText); 
-        }
-      };
-
-      req.send(null);
-   
+        var _calendarListEndPoint = "https://www.googleapis.com/calendar/v3/users/me/calendarList";
+        _access_token = access_token;
+        var _calendarListUrl = _calendarListEndPoint+"?access_code="+access_token;
+        // console.info(_calendarListUrl);
+        var req = new XMLHttpRequest();
+        req.open('GET',_calendarListEndPoint,false);
+        req.setRequestHeader("Authorization","Bearer "+access_token);
+        req.onreadystatechange = function (e) {
+            if (req.readyState == 4) {
+                // console.info("response:"+req.responseText);
+                Calendar.listResponse = $.parseJSON(req.responseText);
+            }
+        };
+    
+        req.send(null);
     };
 
     // 创建日历列表
-
     Calendar.listEntry = new Array();
-
     Calendar.currentCalendar = new Object();
-
     Calendar.setListEntry = function(calendarListArray){
-
-      for (i in calendarListArray){
-        var item = calendarListArray[i];
-
-        if (item["accessRole"]==="owner"){
-
-          var _mainOption = 0;
-
-          if (item["id"].substring(item["id"].length-10)==="google.com" || _mainOption === 1){
-            item["main"] = 0;
-          } else {
-            item["main"] = 1;
-            Calendar.currentCalendar = item;
-            _mainOption = 1;
-          }
-        
-          Calendar.listEntry.push(item);
-        
+        for (i in calendarListArray){
+            var item = calendarListArray[i];
+            if (item["accessRole"]==="owner"){
+                var _mainOption = 0;
+                if (item["id"].substring(item["id"].length-10)==="google.com" || _mainOption === 1){
+                    item["main"] = 0;
+                } else {
+                    item["main"] = 1;
+                    Calendar.currentCalendar = item;
+                    _mainOption = 1;
+                }
+                Calendar.listEntry.push(item);
+            }
         }
-
-      }
-
     };
 
     // 改变当前的默认日历
-
     Calendar.setCurrentCalendar = function(calendarId){
-
-      for (i in Calendar.listEntry){
-
-        var item = Calendar.listEntry[i];
-
-       if (item["id"]===calendarId){
-
-          Calendar.currentCalendar = item;
-
+        for (i in Calendar.listEntry){
+            var item = Calendar.listEntry[i];
+            if (item["id"]===calendarId){
+                Calendar.currentCalendar = item;
+            }
         }
-
-      }
-
-
     };
 
     // 获取某个日历列表项的事件
-
     Calendar.eventsList = new Object();
-
     Calendar.currentTimemin = '';
-
     Calendar.currentTimemax = '';
-
     Calendar.getEventsList = function(calendarId,timemin,timemax){
-
-      var _eventsListEndPoint = "https://www.googleapis.com/calendar/v3/calendars/" + calendarId +"/events";
-
-      var _eventsListUrl = _eventsListEndPoint + "?maxResults=30";
-
-      _eventsListUrl = _eventsListUrl + "&orderBy=updated"
-
-      Calendar.currentTimemin = (new Date(timemin.split("-")[0],(timemin.split("-")[1]-1),timemin.split("-")[2],'00','00','00')).toISOString();  
- 
-      Calendar.currentTimemax = (new Date(timemax.split("-")[0],(timemax.split("-")[1]-1),timemax.split("-")[2],'23','59','59')).toISOString();
-
-      _eventsListUrl = _eventsListUrl + "&timeMin="+Calendar.currentTimemin;
-
-      _eventsListUrl = _eventsListUrl + "&timeMax="+Calendar.currentTimemax;
-
-	  _eventsListUrl = _eventsListUrl + "&fields=description%2Cetag%2Citems(creator%2Cdescription%2Cend%2Cetag%2ChtmlLink%2CiCalUID%2Cid%2Cstart%2Cstatus%2Csummary%2Cupdated)%2Ckind%2CnextPageToken%2Csummary%2Cupdated";
-
-      var req = new XMLHttpRequest();
-
-      req.open('GET',_eventsListUrl,false);
-
-      req.setRequestHeader("Authorization","Bearer "+_access_token);
-
-      req.onreadystatechange = function (e) {
-
-        if (req.readyState == 4) {
-
-          // console.info("response:"+req.responseText);
-
-          Calendar.eventsList = $.parseJSON(req.responseText); 
-        }
-      };
-
-      req.send(null);
-
-
+        var _eventsListEndPoint = "https://www.googleapis.com/calendar/v3/calendars/" + calendarId +"/events";
+        //var _eventsListUrl = _eventsListEndPoint + "?maxResults=30";
+        //var _eventsListUrl = _eventsListUrl + "&orderBy=updated"
+        var _eventsListUrl = _eventsListEndPoint + "?orderBy=updated"
+        Calendar.currentTimemin = (new Date(timemin.split("-")[0],(timemin.split("-")[1]-1),timemin.split("-")[2],'00','00','00')).toISOString();
+        Calendar.currentTimemax = (new Date(timemax.split("-")[0],(timemax.split("-")[1]-1),timemax.split("-")[2],'23','59','59')).toISOString();
+        _eventsListUrl = _eventsListUrl + "&timeMin="+Calendar.currentTimemin;
+        _eventsListUrl = _eventsListUrl + "&timeMax="+Calendar.currentTimemax;
+        _eventsListUrl = _eventsListUrl + "&fields=description%2Cetag%2Citems(creator%2Cdescription%2Cend%2Cetag%2ChtmlLink%2CiCalUID%2Cid%2Cstart%2Cstatus%2Csummary%2Cupdated)%2Ckind%2CnextPageToken%2Csummary%2Cupdated";
+    
+        var req = new XMLHttpRequest();
+        req.open('GET',_eventsListUrl,false);
+        req.setRequestHeader("Authorization","Bearer "+_access_token);
+    
+        req.onreadystatechange = function (e) {
+            if (req.readyState == 4) {
+                Calendar.eventsList = $.parseJSON(req.responseText);
+            }
+        };
+    
+        req.send(null);
     };
 
-	// 对取回的事件列表进行处理
-
-	Calendar.eventsListError = false;
-
-	Calendar.eventsListErrorMessage = '';
-
-	Calendar.eventsListNumber = 0;
-
-	Calendar.doEventsList = function(eventsListResponse){
-
-		if (eventsListResponse['error']){
-
-			Calendar.eventsListError = true;
-
-			Calendar.eventsListErrorMessage = eventsListResponse['error']["message"];
-
-			return 0;
-		}
-
-		if (!eventsListResponse['items'] && eventsListResponse['kind'] !== 'calendar#event'){
-
-			Calendar.eventsListError = false;
-
-			Calendar.eventsListNumber = 0 ;
-
-			return 0;
-		}
-
-		if (eventsListResponse['items']){
-
-			Calendar.eventsListError = false;
-
-			Calendar.eventsListNumber = eventsListResponse['items'].length;
-
-			return ;
-
-		}
-
-		Calendar.eventsListNumber = 1;
-
-	};
-
-	// 生成事件列表
-
-	Calendar.showEventsList = function(itemsArray){
-
-		var _eventsHTML = '';
-
-		for(var i = 0; i < Calendar.eventsListNumber;i++){
-
-			var _item = itemsArray[i];
-
-			var _dateTime = Calendar.parseDateTime(_item['start']['dateTime']);
-
-			_eventsHTML = _eventsHTML + '<div class="event-item" id="'+ _item['id']  + '">';
-
-			_eventsHTML = _eventsHTML + '<div class="alert">';
-			
-			_eventsHTML = _eventsHTML + (i+1) + '.  ' + '<div class="pull-right"><a class="muted button-edit" data-id="' + _item['id'] + '">[修改]</a> <a class="muted button-delete" data-id="'+ _item['id']  +'">[删除]</a></div></div>';
-			
-			_eventsHTML = _eventsHTML + '<div class="well">';
-			
-			_eventsHTML = _eventsHTML + '<p class="text-info">';
-			
-			_eventsHTML = _eventsHTML + _dateTime['year'] + '年';
-			
-			_eventsHTML = _eventsHTML + _dateTime['month'] + '月';
-			
-			_eventsHTML = _eventsHTML + _dateTime['day'] + '日';
-
-			_eventsHTML = _eventsHTML + '<small>（'+ _dateTime['hour'] + ":" + _dateTime['minute']+'）</small>';
-			
-			_eventsHTML = _eventsHTML + '</p>';
-
-			_eventsHTML = _eventsHTML + '<blockquote>'+ _item['summary'] +'</blockquote>';
-
-			if(_item['description']) {
-
-				_eventsHTML = _eventsHTML + "<blockquote>"+ _item['description']  +"</blockquote>";
-			}
-
-			_eventsHTML = _eventsHTML + '</div></div>';
-
-		}
-
-		return _eventsHTML;
-		
-	};
-
-	// 解析RFC3339时间字符串
-
-	Calendar.parseDateTime = function(dateTimeString){
-
-		var googleDate = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})([+-]\d{2}):(\d{2})$/;
-
-		var m = googleDate.exec(dateTimeString);
-
-		var dateTimeObject = new Object();
-
-		dateTimeObject['year'] = m[1];
-		dateTimeObject['month'] = m[2];
-		dateTimeObject['day']   = m[3];
-		dateTimeObject['hour']   = m[4];
-		dateTimeObject['minute'] = m[5];
-		dateTimeObject['second'] = m[6];
-		dateTimeObject['msec']   = m[7];
-		dateTimeObject['tzHour'] = m[8];
-		dateTimeObject['tzMin']  = m[9];
-		dateTimeObject['tzOffset'] = new Date().getTimezoneOffset() + dateTimeObject['tzHour'] * 60 + dateTimeObject['tzMin'];
-
-		// return new Date(year, month - 1, day, hour, minute - tzOffset, second, msec);
-		
-		return dateTimeObject;
-
-	};
-
-	// 插入一个事件
-
-	Calendar.insertEvent = function(eventOptions){
-
-		if (eventOptions['id']){
-
-			var _insertEventEndPoint = 'https://www.googleapis.com/calendar/v3/calendars/' + Calendar.currentCalendar['id']+ '/events/' + eventOptions['id'];
-
-			var req = new XMLHttpRequest();
-
-			req.open('PUT',_insertEventEndPoint,false);
-		
-		} else {
-
-		var _insertEventEndPoint = 'https://www.googleapis.com/calendar/v3/calendars/' + Calendar.currentCalendar['id'] + '/events';
-
-		var req = new XMLHttpRequest();
-
-		req.open('POST',_insertEventEndPoint,false);
-
-		}
-
-		req.setRequestHeader("Content-Type","application/json");
-
-		req.setRequestHeader("Authorization","Bearer "+_access_token);
-
-		if (eventOptions['id']) delete eventOptions['id'];
-
-		var data = $.toJSON(eventOptions); 
-
-		req.onreadystatechange = function (e) {
-
-        if (req.readyState == 4) {
-
-          // console.info("response:"+req.responseText);
-
-          Calendar.eventsList = $.parseJSON(req.responseText); 
-
-		  if (!Calendar.eventsList['error'] && !Calendar.eventsList['items']){
-
-			  Calendar.eventsList = {'items':new Array(Calendar.eventsList)};
-		  }
+    // 对取回的事件列表进行处理
+    Calendar.eventsListError = false;
+    Calendar.eventsListErrorMessage = '';
+    Calendar.eventsListNumber = 0;
+    Calendar.doEventsList = function(eventsListResponse){
+        if (eventsListResponse['error']){
+            Calendar.eventsListError = true;
+            Calendar.eventsListErrorMessage = eventsListResponse['error']["message"];
+            return 0;
         }
-      };
 
-      req.send(data);
-
-	};
-
-	// 删除一个事件
-
-	Calendar.eventDeleteId = '';
-
-	Calendar.eventDelete = function(eventId){
-
-		var _deleteEventEndPoint = 'https://www.googleapis.com/calendar/v3/calendars/' + Calendar.currentCalendar['id'] + '/events/' + eventId; 
-
-		var req = new XMLHttpRequest();
-
-		req.open('DELETE',_deleteEventEndPoint,false);
-		
-		req.setRequestHeader("Authorization","Bearer "+_access_token);
-
-		req.onreadystatechange = function (e) {
-
-        if (req.readyState == 4) {
-
-			if (req.status.toString().substr(0,1) === '2' )
-			{
-				Calendar.eventDeleteId = eventId;
-
-			}
-
-          // console.info("response:"+req.responseText);
- 
+        if (!eventsListResponse['items'] && eventsListResponse['kind'] !== 'calendar#event'){
+            Calendar.eventsListError = false;
+            Calendar.eventsListNumber = 0 ;
+            return 0;
         }
-      };
 
-      req.send(null);
+        if (eventsListResponse['items']){
+            Calendar.eventsListError = false;
+            Calendar.eventsListNumber = eventsListResponse['items'].length;
+            return ;
+        }
 
-	};
+        Calendar.eventsListNumber = 1;
+    };
 
-	return Calendar;
+    // 生成事件列表
+    Calendar.showEventsList = function(itemsArray){
+        var _eventsHTML = '';
+        for(var i = 0; i < Calendar.eventsListNumber;i++){
+            var _item = itemsArray[i];
+            var _dateTime = '';
+            if (_item['status']!="confirmed")
+                continue;
+            if (_item['start']['date']!=undefined)
+                _dateTime = Calendar.parseDateTime(_item['start']['date']);
+            else
+                _dateTime = Calendar.parseDateTime(_item['start']['dateTime']);
+            _eventsHTML = _eventsHTML + '<div class="event-item" id="'+ _item['id']  + '">';
+            _eventsHTML = _eventsHTML + '<div class="alert">';
+            _eventsHTML = _eventsHTML + (i+1) + '.  ' + '<div class="pull-right"><a class="muted button-delete" data-id="'+ _item['id']  +'">[删除]</a></div></div>';
+            _eventsHTML = _eventsHTML + '<div class="well">';
+            _eventsHTML = _eventsHTML + '<p class="text-info">';
+            _eventsHTML = _eventsHTML + _dateTime['year'] + '年';
+            _eventsHTML = _eventsHTML + _dateTime['month'] + '月';
+            _eventsHTML = _eventsHTML + _dateTime['day'] + '日';
+            _eventsHTML = _eventsHTML + '</p>';
+            _eventsHTML = _eventsHTML + '<blockquote>'+ _item['summary'] +'</blockquote>';
+            if(_item['description']) {
+                _eventsHTML = _eventsHTML + "<blockquote>"+ _item['description']  +"</blockquote>";
+            }
+            _eventsHTML = _eventsHTML + '</div></div>';
+        }
+        return _eventsHTML;
+    };
 
-    })(window,jQuery);
+    // 解析RFC3339时间字符串
+    Calendar.parseDateTime = function(dateTimeString){
+        var googleDate = /^(\d{4})-(\d{1,2})-(\d{1,2})/;
+        var m = googleDate.exec(dateTimeString);
+        var dateTimeObject = new Object();
+        dateTimeObject['year'] = m[1];
+        dateTimeObject['month'] = m[2];
+        dateTimeObject['day']   = m[3];
+        return dateTimeObject;
+    };
+
+    // 插入一个事件
+    Calendar.insertEvent = function(eventOptions){
+        if (eventOptions['id']) {
+            var _insertEventEndPoint = 'https://www.googleapis.com/calendar/v3/calendars/' + Calendar.currentCalendar['id']+ '/events/' + eventOptions['id'];
+            var req = new XMLHttpRequest();
+            req.open('PUT',_insertEventEndPoint,false);
+        } else {
+            var _insertEventEndPoint = 'https://www.googleapis.com/calendar/v3/calendars/' + Calendar.currentCalendar['id'] + '/events';
+            var req = new XMLHttpRequest();
+            req.open('POST',_insertEventEndPoint,false);
+        }
+
+        req.setRequestHeader("Content-Type","application/json");
+        req.setRequestHeader("Authorization","Bearer "+_access_token);
+
+        if (eventOptions['id']) delete eventOptions['id'];
+
+        var data = $.toJSON(eventOptions);
+
+        req.onreadystatechange = function (e) {
+            if (req.readyState == 4) {
+                // console.info("response:"+req.responseText);
+                Calendar.eventsList = $.parseJSON(req.responseText);
+
+                if (!Calendar.eventsList['error'] && !Calendar.eventsList['items']){
+                    Calendar.eventsList = {'items':new Array(Calendar.eventsList)};
+                }
+            }
+        };
+
+        req.send(data);
+    };
+
+    // 插入农历重复事件
+    Calendar.insertRecurringEvents = function(recurringEventOptions){
+        var repeat = parseInt(recurringEventOptions["repeat"]);
+        if (repeat < 0 || repeat > 30) {
+            var errorMessage = "<strong>提示：</strong> repeat范围应该是0-30";
+            $("#content-message").show().find(".alert").addClass("alert-error").html(errorMessage);
+            return;
+        }
+        for (var i = 0; i <= repeat; i++) { 
+            var options = new Object();
+            var parsedOldDateStart = Calendar.parseDateTime(recurringEventOptions['dateStart']);
+            var timeStart = recurringEventOptions['timeStart'];
+            var parsedOldDateEnd = Calendar.parseDateTime(recurringEventOptions['dateEnd']);
+            var timeEnd = recurringEventOptions['timeEnd'];
+            var cc  = new CalendarConverter;
+            var solarStart = cc.lunar2solar(new Date(parseInt(parsedOldDateStart['year']) + i, parsedOldDateStart['month'], parsedOldDateStart['day']));
+            var newDateStart = solarStart.sYear + '-' + solarStart.sMonth + '-' + solarStart.sDay;
+            options['start'] = {'dateTime': Utility.setRFC3339(newDateStart, timeStart)};
+            var solarEnd = cc.lunar2solar(new Date(parseInt(parsedOldDateEnd['year']) + i, parsedOldDateEnd['month'], parsedOldDateEnd['day']));
+            var newDateEnd = solarEnd.sYear + '-' + solarEnd.sMonth + '-' + solarEnd.sDay;
+            options['end'] = {'dateTime': Utility.setRFC3339(newDateEnd, timeEnd)};
+            options['summary'] = recurringEventOptions['summary'];
+            if (recurringEventOptions['description']) {
+                options['description'] = recurringEventOptions['description'];
+            }
+            if (recurringEventOptions['id']) {
+                options['id'] = recurringEventOptions['id'];
+            }
+            Calendar.insertEvent(options)
+        }
+    };
+
+    // 删除一个事件
+    Calendar.eventDeleteId = '';
+    Calendar.eventDelete = function(eventId){
+        var _deleteEventEndPoint = 'https://www.googleapis.com/calendar/v3/calendars/' + Calendar.currentCalendar['id'] + '/events/' + eventId;
+        var req = new XMLHttpRequest();
+        req.open('DELETE',_deleteEventEndPoint,false);
+        req.setRequestHeader("Authorization","Bearer "+_access_token);
+        req.onreadystatechange = function (e) {
+            if (req.readyState == 4) {
+                if (req.status.toString().substr(0,1) === '2' ) {
+                    Calendar.eventDeleteId = eventId;
+                }
+                // console.info("response:"+req.responseText);
+            }
+        };
+        req.send(null);
+    };
+
+    return Calendar;
+
+})(window,jQuery);
 
 
 /* Utility：与页面结构密切关联的工具函数 */
-
 var Utility = (function(window,$){
-    
     var Utility = new Object();
 
     // 更新事件列表
-
     Utility.refreshEventsList = function(mode){
-
-	mode = arguments[0]?arguments[0]:'select-event-list';
-
-	if (mode === 'select-event-list'){
-
-    var infoMessage = "<strong>提示：</strong>正在加载，请稍候……";
-
-    $("#content-message").fadeIn(500).find(".alert").addClass("alert-info").html(infoMessage);
-
-     Calendar.getEventsList(Calendar.currentCalendar["id"],$("#timemin").val(),$("#timemax").val());
-
-     $("#content-message").fadeOut(500).find(".alert").removeClass("alert-info");
-
-	 }
-
-     // $("#calendar-events").text(response.toString());
-
-     var response = Calendar.eventsList;
-
-	 Calendar.doEventsList(response);
-
-	 if (Calendar.eventsListError){
-
-	 $("#calendar-events").html('<div class="alert alert-error"><strong>出错了！</strong> '+Calendar.eventsListErrorMessage+"</div>");
-
-		 return 1;
-
-
-	 }
-
-	 if (Calendar.eventsListNumber === 0){
-
-		 $("#calendar-events").html('<div class="alert alert-block"><strong>Ooops!</strong> 该时段是空的，添加一个新事件吧。</div>');
-
-		 return 1;
-
-	 }
-
-	 var calendarEventsHTML = '<div class="alert alert-success">事件总数：<span id="event-number">'+ Calendar.eventsListNumber  +'</span></div>';
-
-	 if (!response["items"]) {
-
-		 calendarEventsHTML += Calendar.showEventsList(new Array(response));
-
-	 } else {
-
-		 calendarEventsHTML += Calendar.showEventsList(response["items"]);
-
-	 }
-
-	 $("#calendar-events").html(calendarEventsHTML);
-
-     // console.dir(response);
-
+        mode = arguments[0]?arguments[0]:'select-event-list';
+    
+        if (mode === 'select-event-list'){
+            var infoMessage = "<strong>提示：</strong>正在加载，请稍候……";
+            $("#content-message").fadeIn(500).find(".alert").addClass("alert-info").html(infoMessage);
+            Calendar.getEventsList(Calendar.currentCalendar["id"],$("#timemin").val(),$("#timemax").val());
+            $("#content-message").fadeOut(500).find(".alert").removeClass("alert-info");
+        }
+    
+        // $("#calendar-events").text(response.toString());
+    
+        var response = Calendar.eventsList;
+        Calendar.doEventsList(response);
+    
+        if (Calendar.eventsListError){
+            $("#calendar-events").html('<div class="alert alert-error"><strong>出错了！</strong> '+Calendar.eventsListErrorMessage+"</div>");
+            return 1;
+        }
+    
+        if (Calendar.eventsListNumber === 0){
+            $("#calendar-events").html('<div class="alert alert-block"><strong>Ooops!</strong> 该时段是空的，添加一个新事件吧。</div>');
+            return 1;
+        }
+    
+        var calendarEventsHTML = '<div class="alert alert-success">事件总数：<span id="event-number">'+ Calendar.eventsListNumber  +'</span></div>';
+    
+        if (!response["items"]) {
+             calendarEventsHTML += Calendar.showEventsList(new Array(response));
+        } else {
+            calendarEventsHTML += Calendar.showEventsList(response["items"]);
+        }
+    
+        $("#calendar-events").html(calendarEventsHTML);
+        // console.dir(response);
     };
 
     // 重置日期栏为当前日期
 
     Utility.resetCurrentDate = function(){
-
-      var currendTime = new Date();
-
-      var currendTimemaxYear = currendTime.getFullYear();
-
-      var currendTimemaxMonth = currendTime.getMonth()+1;
-
-      var currendTimemaxDate = currendTime.getDate();
-
-      var currendTimemax = currendTimemaxYear + "-" + currendTimemaxMonth + "-" + currendTimemaxDate;
-
-      var currendTimestamp =  currendTime.getTime()/1000;
-
-      var currendTimeminStamp = (currendTimestamp/(60*60*24) - 30)*60*60*24;
-
-      var currendTimemin = (new Date(currendTimeminStamp*1000)).getFullYear()+"-"+((new Date(currendTimeminStamp*1000)).getMonth()+1)+"-"+(new Date(currendTimeminStamp*1000)).getDate();
-
-      $("#timemin")[0].value = currendTimemin;
-
-      $("#dpmin").attr("data-date",currendTimemin);
-
-      $("#timemax")[0].value = currendTimemax;
-
-      $("#dpmax").attr("data-date", currendTimemax); 
-
+        var currendTime = new Date();
+        var currendTimemaxYear = currendTime.getFullYear();
+        var currendTimemaxMonth = currendTime.getMonth()+1;
+        var currendTimemaxDate = currendTime.getDate();
+        var currendTimemax = currendTimemaxYear + "-" + currendTimemaxMonth + "-" + currendTimemaxDate;
+        var currendTimestamp =  currendTime.getTime()/1000;
+        var currendTimeminStamp = (currendTimestamp/(60*60*24) - 30)*60*60*24;
+        var currendTimemin = (new Date(currendTimeminStamp*1000)).getFullYear()+"-"+((new Date(currendTimeminStamp*1000)).getMonth()+1)+"-"+(new Date(currendTimeminStamp*1000)).getDate();
+        $("#timemin")[0].value = currendTimemin;
+        $("#dpmin").attr("data-date",currendTimemin);
+        $("#timemax")[0].value = currendTimemax;
+        $("#dpmax").attr("data-date", currendTimemax);
     };
 
-	// 添加新事件
+    // 添加新事件
+    Utility.addEvent = function(){
+        if (!Calendar.currentCalendar['id']){
+            Utility.showStatusBar('error','没有指定日历。');
+            return ;
+        }
 
-	Utility.addEvent = function(){
+        Utility.setNewEventTime();
 
-		if (!Calendar.currentCalendar['id']){
+        $('#momentstart').val(Utility.currentTime['hour'] + ":" + Utility.currentTime['minute']);
+        $('#momentstart').timepicker({'showMeridian':false,'defaultTime':'value'});
+        $('#momentend').val(new Date(Utility.currentTime['endStamp']*1000).getHours() + ":" + new Date(Utility.currentTime['endStamp']*1000).getMinutes());
+        $('#momentend').timepicker({'showMeridian':false,'defaultTime':'value'});
+        $('#form-event-summary').val('');
+        $('#form-event-description').val('');
+        $('#event-new').find('.modal-header p').text('添加农历循环事件');
+        $('#event-new').modal({"keyboard":false,"show":true});
+    };
 
-			Utility.showStatusBar('error','没有指定日历。');
-
-			return ;
-
-		}
-
-		Utility.setNewEventTime();
-
-		$('#momentstart').val(Utility.currentTime['hour'] + ":" + Utility.currentTime['minute']);
-
-		$('#momentstart').timepicker({'showMeridian':false,'defaultTime':'value'});
-
-		$('#momentend').val(new Date(Utility.currentTime['endStamp']*1000).getHours() + ":" + new Date(Utility.currentTime['endStamp']*1000).getMinutes());
-
-		$('#momentend').timepicker({'showMeridian':false,'defaultTime':'value'});
-
-		$('#form-event-summary').val('');
-
-		$('#form-event-description').val('');
-
-		$('#event-new').find('.modal-header p').text('添加新事件');
-
-		$('#event-new').modal({"keyboard":false,"show":true});
-
-	};
-
-	// 显示状态条
-
-	Utility.showStatusBar = function(status,statusMessage){
-
-		var statusClass = 'alert-' + status; 
-	
-	    statusMessage = "<strong>提示：</strong>"+ statusMessage + "  <a href=\""+ Utility.url["protocol"] + "//" + Utility.url["host"] + Utility.url["path"] + "\">[返回]</a>";
-
+    // 显示状态条
+    Utility.showStatusBar = function(status,statusMessage){
+        var statusClass = 'alert-' + status;
+        statusMessage = "<strong>提示：</strong>"+ statusMessage + "  <a href=\""+ Utility.url["protocol"] + "//" + Utility.url["host"] + Utility.url["path"] + "\">[返回]</a>";
         $("#content-message").show().find(".alert").addClass(statusClass).html(statusMessage);
-	
-	};
-
-	// 解析URL
-
-	Utility.url = new Object();
-
-	Utility.parseUrl = function(){
-
-		 Utility.url["host"] = location.host;
-
-		 Utility.url["href"] = location.href;
-
-		 Utility.url["path"] = location.pathname;
-
-		 Utility.url["protocol"] = location.protocol;
-
-		 Utility.url["port"] = location.port;
-
-		 Utility.url["hash"] = location.hash;
-
-		 Utility.url["search"] = location.search;
-
-		 return Utility.url;
-
-	};
-
-	// 解析网址的hash部分
-
-	Utility.hash = new Object();
-
-	Utility.parseHash = function(hashString){
-
-		var hashArray = (hashString.substr(1)).split("&");
-
-		for (i in hashArray){
-
-			var hashKey = hashArray[i].split("=")[0];
-
-			var hashValue = hashArray[i].split("=")[1];
-
-			Utility.hash[hashKey] = hashValue;
-
-		}
-
-		return Utility.hash;	
-	
-	};
-	
-	// 设定添加事件时的默认时间
-
-	Utility.currentTime = new Object();
-
-	Utility.setNewEventTime = function(){
-
-	  Utility.currentTime['raw'] = new Date();
-
-      Utility.currentTime['year'] = Utility.currentTime['raw'].getFullYear();
-
-      Utility.currentTime['month'] = Utility.currentTime['raw'].getMonth()+1;
-
-      Utility.currentTime['date'] = Utility.currentTime['raw'].getDate();
-
-	  Utility.currentTime['hour'] = Utility.currentTime['raw'].getHours();
-
-	  Utility.currentTime['minute'] = Utility.currentTime['raw'].getMinutes();
-
-	  Utility.currentTime['second'] = Utility.currentTime['raw'].getSeconds();
-
-	  var TimeStart = Utility.currentTime['year'] + "-" + Utility.currentTime['month'] + "-" + Utility.currentTime['date'];
-
-	  Utility.currentTime['startStamp'] =  Utility.currentTime['raw'].getTime()/1000;
-
-      Utility.currentTime['endStamp'] = Utility.currentTime['startStamp'] + 60*60;
-
-      var TimeEnd = (new Date(Utility.currentTime['endStamp']*1000)).getFullYear();
-	  
-	  TimeEnd  = TimeEnd +"-"+((new Date(Utility.currentTime['endStamp']*1000)).getMonth()+1);
-	  
-	  TimeEnd = TimeEnd +"-"+(new Date(Utility.currentTime['endStamp']*1000)).getDate();
-
-      $("#timestart")[0].value = TimeStart;
-
-      $("#dpstart").attr("data-date",TimeStart);
-
-      $("#timeend")[0].value = TimeEnd;
-
-      $("#dpend").attr("data-date", TimeEnd);
-
-	};
-
-	// 检查插入事件的表单
-
-	Utility.checkEventForm = function(){
-
-		var form = $('#form-event-new');
-
-		var inputArray = form.find('input');
-
-		var formErrorStatus = false ;
-
-		inputArray.each(function(){
-
-			var input = $(this);
-
-			if (input.hasClass('error')){
-				input.removeClass('error');
-			}
-
-			if (!input.val()){
-
-				input.addClass('error');
-
-				formErrorStatus = true;
-
-			}
-
-			});
-
-		if (formErrorStatus) return 0;
-
-		return 1;
-	
-	};
-
-	// 插入一个事件
-
-	Utility.insertEvent = function(){
-
-		var options = new Object();
-
-		var dateStart = $('#timestart').val();
-
-		var timeStart = $('#momentstart').val();
-
-		var dateEnd = $('#timeend').val();
-
-		var timeEnd = $('#momentend').val();
-
-		options['start'] = {'dateTime':Utility.setRFC3339(dateStart,timeStart)};
-
-		options['end'] = {'dateTime':Utility.setRFC3339(dateEnd,timeEnd)};
-
-		options['summary'] = $.trim($('#form-event-summary').val()); 
-
-		if ($.trim($('#form-event-description').val())){
-
-			options['description'] = $.trim($('#form-event-description').val());
-
-		}
-
-		if ($('#button-insert-event').data('id')){i
-
-			options['id'] = $('#button-insert-event').data('id');
-
-			$('#button-insert-event').data('id','');
-
-		}
-
-		return options;
-
-	};
-
-	// 生成RFC3339格式的日期
-
-	Utility.setRFC3339 = function(date,time){
-	
-		var dateArray = date.split("-");
-
-		var rfcString = dateArray[0]+'-';
-
-		rfcString = rfcString + Utility.padZero(dateArray[1]) + '-';
-
-		rfcString = rfcString + Utility.padZero(dateArray[2]) + 'T';
-
-		var timeArray = time.split(":");
-
-		rfcString = rfcString + Utility.padZero(timeArray[0]) + ':' ;
-
-		rfcString = rfcString + Utility.padZero(timeArray[1]) + ':' ;
-
-		rfcString = rfcString + "00";
-
-		var dateOffset = (new Date()).getTimezoneOffset();
-
-		rfcString = rfcString + (dateOffset>0?"-":"+");
-
-		rfcString = rfcString + Utility.padZero(Math.floor(Math.abs(dateOffset) / 60)) + ":" + Utility.padZero(Math.abs(dateOffset) % 60);
-
-		return rfcString;
-	
-	};
-
-	// 为不到两位的数字加上前导0
-
-	Utility.padZero = function(numString){
-
-		if ((numString*1)<10) numString = '0' + (numString*1).toString();
-
-		return numString;
-	
-	};
-
-	// 询问是否删除一个事件
-
-	Utility.confirmEventDelete = function(eventId){
-
-		$('#button-confirm-event-delete').attr('data-id',eventId);
-
-		$('#modal-event-delete').modal('show');
-
-	};
-
-	// 删除一个事件
-
-	Utility.eventDelete = function(eventId){
-
-		Calendar.eventDelete(eventId);
-
-		$('#modal-event-delete').modal('hide');
-
-		if (Calendar.eventDeleteId === eventId){
-
-			$('#'+eventId).hide('5000');
-
-			$('#event-number').text(parseInt($('#event-number').text())-1);
-		} else {
-
-			$("#content-message").fadeIn(1500).find(".alert").addClass("alert-info").html('<strong>出错了！</strong> 删除没有成功……');
-
-		}
-
-	};
-
-	// 显示事件编辑窗口
-
-	Utility.confirmEventEdit = function(eventId){
-
-		console.info('事件编辑窗口：ID' + eventId);
-
-		for ( i in Calendar.eventsList['items']){
-
-			if (Calendar.eventsList['items'][i]['id'] === eventId){
-
-				var event = Calendar.eventsList['items'][i];
-
-				break;
-
-			}
-		}
-
-		if (!event) return ;
-
-		$('#event-new').find('.modal-header p').text('修改');
-
-		$('#timestart').val(event['start']['dateTime'].split('T')[0]);
-
-		$('#dpstart').data('date',event['start']['dateTime'].split('T')[0]);
-
-		$('#timeend').val(event['end']['dateTime'].split('T')[0]);
-
-		$('#dpend').data('date',event['end']['dateTime'].split('T')[0]);
-
-		$('#momentstart').val(event['start']['dateTime'].split('T')[1].substr(0,5));
-
-		$('#momentend').val(event['end']['dateTime'].split('T')[1].substr(0,5));
-
-		$('#form-event-summary').val(event['summary']);
-
-		$('#form-event-description').val(event['description']);
-
-		$('#button-insert-event').data('id',eventId);
-	
-		$('#event-new').modal({'keyboard':false,'show':true});
-	
-	};
+    };
+
+    // 解析URL
+    Utility.url = new Object();
+    Utility.parseUrl = function(){
+         Utility.url["host"] = location.host;
+         Utility.url["href"] = location.href;
+         Utility.url["path"] = location.pathname;
+         Utility.url["protocol"] = location.protocol;
+         Utility.url["port"] = location.port;
+         Utility.url["hash"] = location.hash;
+         Utility.url["search"] = location.search;
+         return Utility.url;
+    };
+
+    // 解析网址的hash部分
+    Utility.hash = new Object();
+    Utility.parseHash = function(hashString){
+        var hashArray = (hashString.substr(1)).split("&");
+        for (i in hashArray){
+            var hashKey = hashArray[i].split("=")[0];
+            var hashValue = hashArray[i].split("=")[1];
+            Utility.hash[hashKey] = hashValue;
+        }
+        return Utility.hash;
+    };
+
+    // 设定添加事件时的默认时间
+    Utility.currentTime = new Object();
+    Utility.setNewEventTime = function(){
+        Utility.currentTime['raw'] = new Date();
+        Utility.currentTime['year'] = Utility.currentTime['raw'].getFullYear();
+        Utility.currentTime['month'] = Utility.currentTime['raw'].getMonth()+1;
+        Utility.currentTime['date'] = Utility.currentTime['raw'].getDate();
+        Utility.currentTime['hour'] = Utility.currentTime['raw'].getHours();
+        Utility.currentTime['minute'] = Utility.currentTime['raw'].getMinutes();
+        Utility.currentTime['second'] = Utility.currentTime['raw'].getSeconds();
+        var TimeStart = Utility.currentTime['year'] + "-" + Utility.currentTime['month'] + "-" + Utility.currentTime['date'];
+        Utility.currentTime['startStamp'] =  Utility.currentTime['raw'].getTime()/1000;
+        Utility.currentTime['endStamp'] = Utility.currentTime['startStamp'] + 60*60;
+        var TimeEnd = (new Date(Utility.currentTime['endStamp']*1000)).getFullYear();
+        TimeEnd  = TimeEnd +"-"+((new Date(Utility.currentTime['endStamp']*1000)).getMonth()+1);
+        TimeEnd = TimeEnd +"-"+(new Date(Utility.currentTime['endStamp']*1000)).getDate();
+        $("#timestart")[0].value = TimeStart;
+        $("#dpstart").attr("data-date",TimeStart);
+        $("#timeend")[0].value = TimeEnd;
+        $("#dpend").attr("data-date", TimeEnd);
+    };
+
+    // 检查插入事件的表单
+    Utility.checkEventForm = function(){
+        var form = $('#form-event-new');
+        var inputArray = form.find('input');
+        var formErrorStatus = false ;
+        inputArray.each(function(){
+            var input = $(this);
+            if (input.hasClass('error')){
+                input.removeClass('error');
+            }
+            if (!input.val()){
+                input.addClass('error');
+                formErrorStatus = true;
+            }
+        });
+
+        if (formErrorStatus) return 0;
+
+        return 1;
+    };
+
+    // 插入一个事件
+    Utility.insertEvent = function(){
+        var options = new Object();
+        //var dateStart = $('#timestart').val();
+        //var timeStart = $('#momentstart').val();
+        //var dateEnd = $('#timeend').val();
+        //var timeEnd = $('#momentend').val();
+        //options['start'] = {'dateTime':Utility.setRFC3339(dateStart,timeStart)};
+        //options['end'] = {'dateTime':Utility.setRFC3339(dateEnd,timeEnd)};
+        options['dateStart'] = $('#timestart').val();
+        options['timeStart'] = $('#momentstart').val();
+        options['dateEnd'] = $('#timeend').val();
+        options['timeEnd'] = $('#momentend').val();
+        options['repeat'] = $.trim($('#form-event-repeat').val());
+        options['summary'] = $.trim($('#form-event-summary').val());
+
+        if ($.trim($('#form-event-description').val())){
+            options['description'] = $.trim($('#form-event-description').val());
+        }
+
+        if ($('#button-insert-event').data('id')){
+            options['id'] = $('#button-insert-event').data('id');
+            $('#button-insert-event').data('id','');
+        }
+
+        return options;
+    };
+
+    // 生成RFC3339格式的日期
+    Utility.setRFC3339 = function(date,time){
+        var dateArray = date.split("-");
+        var rfcString = dateArray[0]+'-';
+        rfcString = rfcString + Utility.padZero(dateArray[1]) + '-';
+        rfcString = rfcString + Utility.padZero(dateArray[2]) + 'T';
+        var timeArray = time.split(":");
+        rfcString = rfcString + Utility.padZero(timeArray[0]) + ':' ;
+        rfcString = rfcString + Utility.padZero(timeArray[1]) + ':' ;
+        rfcString = rfcString + "00";
+        var dateOffset = (new Date()).getTimezoneOffset();
+        rfcString = rfcString + (dateOffset>0?"-":"+");
+        rfcString = rfcString + Utility.padZero(Math.floor(Math.abs(dateOffset) / 60)) + ":" + Utility.padZero(Math.abs(dateOffset) % 60);
+        return rfcString;
+    };
+
+    // 为不到两位的数字加上前导0
+    Utility.padZero = function(numString){
+        if ((numString*1)<10) numString = '0' + (numString*1).toString();
+        return numString;
+    };
+
+    // 询问是否删除一个事件
+    Utility.confirmEventDelete = function(eventId){
+        $('#button-confirm-event-delete').attr('data-id',eventId);
+        $('#modal-event-delete').modal('show');
+    };
+
+    // 删除一个事件
+    Utility.eventDelete = function(eventId){
+        Calendar.eventDelete(eventId);
+        $('#modal-event-delete').modal('hide');
+        if (Calendar.eventDeleteId === eventId){
+            $('#'+eventId).hide('5000');
+            $('#event-number').text(parseInt($('#event-number').text())-1);
+        } else {
+            $("#content-message").fadeIn(1500).find(".alert").addClass("alert-info").html('<strong>出错了！</strong> 删除没有成功……');
+        }
+    };
+
+    // 显示事件编辑窗口
+    Utility.confirmEventEdit = function(eventId){
+        // console.info('事件编辑窗口：ID' + eventId);
+        for ( i in Calendar.eventsList['items']){
+            if (Calendar.eventsList['items'][i]['id'] === eventId){
+                var event = Calendar.eventsList['items'][i];
+                break;
+            }
+        }
+
+        if (!event) return ;
+
+        $('#event-new').find('.modal-header p').text('修改');
+        $('#timestart').val(event['start']['dateTime'].split('T')[0]);
+        $('#dpstart').data('date',event['start']['dateTime'].split('T')[0]);
+        $('#timeend').val(event['end']['dateTime'].split('T')[0]);
+        $('#dpend').data('date',event['end']['dateTime'].split('T')[0]);
+        $('#momentstart').val(event['start']['dateTime'].split('T')[1].substr(0,5));
+        $('#momentend').val(event['end']['dateTime'].split('T')[1].substr(0,5));
+        $('#form-event-summary').val(event['summary']);
+        $('#form-event-description').val(event['description']);
+        $('#button-insert-event').data('id',eventId);
+        $('#event-new').modal({'keyboard':false,'show':true});
+    };
 
     return Utility;
-    
-    })(window,jQuery);
+})(window,jQuery);
 
 /* =========================================================
- * bootstrap-datepicker.js 
+ * bootstrap-datepicker.js
  * http://www.eyecon.ro/bootstrap-datepicker
  * =========================================================
  * Copyright 2012 Stefan Petre
@@ -1093,387 +747,387 @@ var Utility = (function(window,$){
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * ========================================================= */
- 
-!function( $ ) {
-	
-	// Picker object
-	
-	var Datepicker = function(element, options){
-		this.element = $(element);
-		this.format = DPGlobal.parseFormat(options.format||this.element.data('date-format')||'mm/dd/yyyy');
-		this.picker = $(DPGlobal.template)
-							.appendTo('body')
-							.on({
-								click: $.proxy(this.click, this),
-								mousedown: $.proxy(this.mousedown, this)
-							});
-		this.isInput = this.element.is('input');
-		this.component = this.element.is('.date') ? this.element.find('.add-on') : false;
-		
-		if (this.isInput) {
-			this.element.on({
-				focus: $.proxy(this.show, this),
-				blur: $.proxy(this.hide, this),
-				keyup: $.proxy(this.update, this)
-			});
-		} else {
-			if (this.component){
-				this.component.on('click', $.proxy(this.show, this));
-			} else {
-				this.element.on('click', $.proxy(this.show, this));
-			}
-		}
-		
-		this.viewMode = 0;
-		this.weekStart = options.weekStart||this.element.data('date-weekstart')||0;
-		this.weekEnd = this.weekStart == 0 ? 6 : this.weekStart - 1;
-		this.fillDow();
-		this.fillMonths();
-		this.update();
-		this.showMode();
-	};
-	
-	Datepicker.prototype = {
-		constructor: Datepicker,
-		
-		show: function(e) {
-			this.picker.show();
-			this.height = this.component ? this.component.outerHeight() : this.element.outerHeight();
-			this.place();
-			$(window).on('resize', $.proxy(this.place, this));
-			if (e ) {
-				e.stopPropagation();
-				e.preventDefault();
-			}
-			if (!this.isInput) {
-				$(document).on('mousedown', $.proxy(this.hide, this));
-			}
-			this.element.trigger({
-				type: 'show',
-				date: this.date
-			});
-		},
-		
-		hide: function(){
-			this.picker.hide();
-			$(window).off('resize', this.place);
-			this.viewMode = 0;
-			this.showMode();
-			if (!this.isInput) {
-				$(document).off('mousedown', this.hide);
-			}
-			this.setValue();
-			this.element.trigger({
-				type: 'hide',
-				date: this.date
-			});
-		},
-		
-		setValue: function() {
-			var formated = DPGlobal.formatDate(this.date, this.format);
-			if (!this.isInput) {
-				if (this.component){
-					this.element.find('input').prop('value', formated);
-				}
-				this.element.data('date', formated);
-			} else {
-				this.element.prop('value', formated);
-			}
-		},
-		
-		place: function(){
-			var offset = this.component ? this.component.offset() : this.element.offset();
-			this.picker.css({
-				top: offset.top + this.height,
-				left: offset.left
-			});
-		},
-		
-		update: function(){
-			this.date = DPGlobal.parseDate(
-				this.isInput ? this.element.prop('value') : this.element.data('date'),
-				this.format
-			);
-			this.viewDate = new Date(this.date);
-			this.fill();
-		},
-		
-		fillDow: function(){
-			var dowCnt = this.weekStart;
-			var html = '<tr>';
-			while (dowCnt < this.weekStart + 7) {
-				html += '<th class="dow">'+DPGlobal.dates.daysMin[(dowCnt++)%7]+'</th>';
-			}
-			html += '</tr>';
-			this.picker.find('.datepicker-days thead').append(html);
-		},
-		
-		fillMonths: function(){
-			var html = '';
-			var i = 0
-			while (i < 12) {
-				html += '<span class="month">'+DPGlobal.dates.monthsShort[i++]+'</span>';
-			}
-			this.picker.find('.datepicker-months td').append(html);
-		},
-		
-		fill: function() {
-			var d = new Date(this.viewDate),
-				year = d.getFullYear(),
-				month = d.getMonth(),
-				currentDate = this.date.valueOf();
-			this.picker.find('.datepicker-days th:eq(1)')
-						.text(DPGlobal.dates.months[month]+' '+year);
-			var prevMonth = new Date(year, month-1, 28,0,0,0,0),
-				day = DPGlobal.getDaysInMonth(prevMonth.getFullYear(), prevMonth.getMonth());
-			prevMonth.setDate(day);
-			prevMonth.setDate(day - (prevMonth.getDay() - this.weekStart + 7)%7);
-			var nextMonth = new Date(prevMonth);
-			nextMonth.setDate(nextMonth.getDate() + 42);
-			nextMonth = nextMonth.valueOf();
-			html = [];
-			var clsName;
-			while(prevMonth.valueOf() < nextMonth) {
-				if (prevMonth.getDay() == this.weekStart) {
-					html.push('<tr>');
-				}
-				clsName = '';
-				if (prevMonth.getMonth() < month) {
-					clsName += ' old';
-				} else if (prevMonth.getMonth() > month) {
-					clsName += ' new';
-				}
-				if (prevMonth.valueOf() == currentDate) {
-					clsName += ' active';
-				}
-				html.push('<td class="day'+clsName+'">'+prevMonth.getDate() + '</td>');
-				if (prevMonth.getDay() == this.weekEnd) {
-					html.push('</tr>');
-				}
-				prevMonth.setDate(prevMonth.getDate()+1);
-			}
-			this.picker.find('.datepicker-days tbody').empty().append(html.join(''));
-			var currentYear = this.date.getFullYear();
-			
-			var months = this.picker.find('.datepicker-months')
-						.find('th:eq(1)')
-							.text(year)
-							.end()
-						.find('span').removeClass('active');
-			if (currentYear == year) {
-				months.eq(this.date.getMonth()).addClass('active');
-			}
-			
-			html = '';
-			year = parseInt(year/10, 10) * 10;
-			var yearCont = this.picker.find('.datepicker-years')
-								.find('th:eq(1)')
-									.text(year + '-' + (year + 9))
-									.end()
-								.find('td');
-			year -= 1;
-			for (var i = -1; i < 11; i++) {
-				html += '<span class="year'+(i == -1 || i == 10 ? ' old' : '')+(currentYear == year ? ' active' : '')+'">'+year+'</span>';
-				year += 1;
-			}
-			yearCont.html(html);
-		},
-		
-		click: function(e) {
-			e.stopPropagation();
-			e.preventDefault();
-			var target = $(e.target).closest('span, td, th');
-			if (target.length == 1) {
-				switch(target[0].nodeName.toLowerCase()) {
-					case 'th':
-						switch(target[0].className) {
-							case 'switch':
-								this.showMode(1);
-								break;
-							case 'prev':
-							case 'next':
-								this.viewDate['set'+DPGlobal.modes[this.viewMode].navFnc].call(
-									this.viewDate,
-									this.viewDate['get'+DPGlobal.modes[this.viewMode].navFnc].call(this.viewDate) + 
-									DPGlobal.modes[this.viewMode].navStep * (target[0].className == 'prev' ? -1 : 1)
-								);
-								this.fill();
-								break;
-						}
-						break;
-					case 'span':
-						if (target.is('.month')) {
-							var month = target.parent().find('span').index(target);
-							this.viewDate.setMonth(month);
-						} else {
-							var year = parseInt(target.text(), 10)||0;
-							this.viewDate.setFullYear(year);
-						}
-						this.showMode(-1);
-						this.fill();
-						break;
-					case 'td':
-						if (target.is('.day')){
-							var day = parseInt(target.text(), 10)||1;
-							var month = this.viewDate.getMonth();
-							if (target.is('.old')) {
-								month -= 1;
-							} else if (target.is('.new')) {
-								month += 1;
-							}
-							var year = this.viewDate.getFullYear();
-							this.date = new Date(year, month, day,0,0,0,0);
-							this.viewDate = new Date(year, month, day,0,0,0,0);
-							this.fill();
-							this.setValue();
-							this.element.trigger({
-								type: 'changeDate',
-								date: this.date
-							});
-						}
-						break;
-				}
-			}
-		},
-		
-		mousedown: function(e){
-			e.stopPropagation();
-			e.preventDefault();
-		},
-		
-		showMode: function(dir) {
-			if (dir) {
-				this.viewMode = Math.max(0, Math.min(2, this.viewMode + dir));
-			}
-			this.picker.find('>div').hide().filter('.datepicker-'+DPGlobal.modes[this.viewMode].clsName).show();
-		}
-	};
-	
-	$.fn.datepicker = function ( option ) {
-		return this.each(function () {
-			var $this = $(this),
-				data = $this.data('datepicker'),
-				options = typeof option == 'object' && option;
-			if (!data) {
-				$this.data('datepicker', (data = new Datepicker(this, $.extend({}, $.fn.datepicker.defaults,options))));
-			}
-			if (typeof option == 'string') data[option]();
-		});
-	};
 
-	$.fn.datepicker.defaults = {
-	};
-	$.fn.datepicker.Constructor = Datepicker;
-	
-	var DPGlobal = {
-		modes: [
-			{
-				clsName: 'days',
-				navFnc: 'Month',
-				navStep: 1
-			},
-			{
-				clsName: 'months',
-				navFnc: 'FullYear',
-				navStep: 1
-			},
-			{
-				clsName: 'years',
-				navFnc: 'FullYear',
-				navStep: 10
-		}],
-		dates:{
-			days: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-			daysShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-			daysMin: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
-			months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
-			monthsShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-		},
-		isLeapYear: function (year) {
-			return (((year % 4 === 0) && (year % 100 !== 0)) || (year % 400 === 0))
-		},
-		getDaysInMonth: function (year, month) {
-			return [31, (DPGlobal.isLeapYear(year) ? 29 : 28), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month]
-		},
-		parseFormat: function(format){
-			var separator = format.match(/[.\/-].*?/),
-				parts = format.split(/\W+/);
-			if (!separator || !parts || parts.length == 0){
-				throw new Error("Invalid date format.");
-			}
-			return {separator: separator, parts: parts};
-		},
-		parseDate: function(date, format) {
-			var parts = date.split(format.separator),
-				date = new Date(1970, 1, 1, 0, 0, 0),
-				val;
-			if (parts.length == format.parts.length) {
-				for (var i=0, cnt = format.parts.length; i < cnt; i++) {
-					val = parseInt(parts[i], 10)||1;
-					switch(format.parts[i]) {
-						case 'dd':
-						case 'd':
-							date.setDate(val);
-							break;
-						case 'mm':
-						case 'm':
-							date.setMonth(val - 1);
-							break;
-						case 'yy':
-							date.setFullYear(2000 + val);
-							break;
-						case 'yyyy':
-							date.setFullYear(val);
-							break;
-					}
-				}
-			}
-			return date;
-		},
-		formatDate: function(date, format){
-			var val = {
-				d: date.getDate(),
-				m: date.getMonth() + 1,
-				yy: date.getFullYear().toString().substring(2),
-				yyyy: date.getFullYear()
-			};
-			val.dd = (val.d < 10 ? '0' : '') + val.d;
-			val.mm = (val.m < 10 ? '0' : '') + val.m;
-			var date = [];
-			for (var i=0, cnt = format.parts.length; i < cnt; i++) {
-				date.push(val[format.parts[i]]);
-			}
-			return date.join(format.separator);
-		},
-		headTemplate: '<thead>'+
-							'<tr>'+
-								'<th class="prev"><i class="icon-arrow-left"/></th>'+
-								'<th colspan="5" class="switch"></th>'+
-								'<th class="next"><i class="icon-arrow-right"/></th>'+
-							'</tr>'+
-						'</thead>',
-		contTemplate: '<tbody><tr><td colspan="7"></td></tr></tbody>'
-	};
-	DPGlobal.template = '<div class="datepicker dropdown-menu">'+
-							'<div class="datepicker-days">'+
-								'<table class=" table-condensed">'+
-									DPGlobal.headTemplate+
-									'<tbody></tbody>'+
-								'</table>'+
-							'</div>'+
-							'<div class="datepicker-months">'+
-								'<table class="table-condensed">'+
-									DPGlobal.headTemplate+
-									DPGlobal.contTemplate+
-								'</table>'+
-							'</div>'+
-							'<div class="datepicker-years">'+
-								'<table class="table-condensed">'+
-									DPGlobal.headTemplate+
-									DPGlobal.contTemplate+
-								'</table>'+
-							'</div>'+
-						'</div>';
+!function( $ ) {
+
+    // Picker object
+
+    var Datepicker = function(element, options){
+        this.element = $(element);
+        this.format = DPGlobal.parseFormat(options.format||this.element.data('date-format')||'mm/dd/yyyy');
+        this.picker = $(DPGlobal.template)
+                            .appendTo('body')
+                            .on({
+                                click: $.proxy(this.click, this),
+                                mousedown: $.proxy(this.mousedown, this)
+                            });
+        this.isInput = this.element.is('input');
+        this.component = this.element.is('.date') ? this.element.find('.add-on') : false;
+
+        if (this.isInput) {
+            this.element.on({
+                focus: $.proxy(this.show, this),
+                blur: $.proxy(this.hide, this),
+                keyup: $.proxy(this.update, this)
+            });
+        } else {
+            if (this.component){
+                this.component.on('click', $.proxy(this.show, this));
+            } else {
+                this.element.on('click', $.proxy(this.show, this));
+            }
+        }
+
+        this.viewMode = 0;
+        this.weekStart = options.weekStart||this.element.data('date-weekstart')||0;
+        this.weekEnd = this.weekStart == 0 ? 6 : this.weekStart - 1;
+        this.fillDow();
+        this.fillMonths();
+        this.update();
+        this.showMode();
+    };
+
+    Datepicker.prototype = {
+        constructor: Datepicker,
+
+        show: function(e) {
+            this.picker.show();
+            this.height = this.component ? this.component.outerHeight() : this.element.outerHeight();
+            this.place();
+            $(window).on('resize', $.proxy(this.place, this));
+            if (e ) {
+                e.stopPropagation();
+                e.preventDefault();
+            }
+            if (!this.isInput) {
+                $(document).on('mousedown', $.proxy(this.hide, this));
+            }
+            this.element.trigger({
+                type: 'show',
+                date: this.date
+            });
+        },
+
+        hide: function(){
+            this.picker.hide();
+            $(window).off('resize', this.place);
+            this.viewMode = 0;
+            this.showMode();
+            if (!this.isInput) {
+                $(document).off('mousedown', this.hide);
+            }
+            this.setValue();
+            this.element.trigger({
+                type: 'hide',
+                date: this.date
+            });
+        },
+
+        setValue: function() {
+            var formated = DPGlobal.formatDate(this.date, this.format);
+            if (!this.isInput) {
+                if (this.component){
+                    this.element.find('input').prop('value', formated);
+                }
+                this.element.data('date', formated);
+            } else {
+                this.element.prop('value', formated);
+            }
+        },
+
+        place: function(){
+            var offset = this.component ? this.component.offset() : this.element.offset();
+            this.picker.css({
+                top: offset.top + this.height,
+                left: offset.left
+            });
+        },
+
+        update: function(){
+            this.date = DPGlobal.parseDate(
+                this.isInput ? this.element.prop('value') : this.element.data('date'),
+                this.format
+            );
+            this.viewDate = new Date(this.date);
+            this.fill();
+        },
+
+        fillDow: function(){
+            var dowCnt = this.weekStart;
+            var html = '<tr>';
+            while (dowCnt < this.weekStart + 7) {
+                html += '<th class="dow">'+DPGlobal.dates.daysMin[(dowCnt++)%7]+'</th>';
+            }
+            html += '</tr>';
+            this.picker.find('.datepicker-days thead').append(html);
+        },
+
+        fillMonths: function(){
+            var html = '';
+            var i = 0
+            while (i < 12) {
+                html += '<span class="month">'+DPGlobal.dates.monthsShort[i++]+'</span>';
+            }
+            this.picker.find('.datepicker-months td').append(html);
+        },
+
+        fill: function() {
+            var d = new Date(this.viewDate),
+                year = d.getFullYear(),
+                month = d.getMonth(),
+                currentDate = this.date.valueOf();
+            this.picker.find('.datepicker-days th:eq(1)')
+                        .text(DPGlobal.dates.months[month]+' '+year);
+            var prevMonth = new Date(year, month-1, 28,0,0,0,0),
+                day = DPGlobal.getDaysInMonth(prevMonth.getFullYear(), prevMonth.getMonth());
+            prevMonth.setDate(day);
+            prevMonth.setDate(day - (prevMonth.getDay() - this.weekStart + 7)%7);
+            var nextMonth = new Date(prevMonth);
+            nextMonth.setDate(nextMonth.getDate() + 42);
+            nextMonth = nextMonth.valueOf();
+            html = [];
+            var clsName;
+            while(prevMonth.valueOf() < nextMonth) {
+                if (prevMonth.getDay() == this.weekStart) {
+                    html.push('<tr>');
+                }
+                clsName = '';
+                if (prevMonth.getMonth() < month) {
+                    clsName += ' old';
+                } else if (prevMonth.getMonth() > month) {
+                    clsName += ' new';
+                }
+                if (prevMonth.valueOf() == currentDate) {
+                    clsName += ' active';
+                }
+                html.push('<td class="day'+clsName+'">'+prevMonth.getDate() + '</td>');
+                if (prevMonth.getDay() == this.weekEnd) {
+                    html.push('</tr>');
+                }
+                prevMonth.setDate(prevMonth.getDate()+1);
+            }
+            this.picker.find('.datepicker-days tbody').empty().append(html.join(''));
+            var currentYear = this.date.getFullYear();
+
+            var months = this.picker.find('.datepicker-months')
+                        .find('th:eq(1)')
+                            .text(year)
+                            .end()
+                        .find('span').removeClass('active');
+            if (currentYear == year) {
+                months.eq(this.date.getMonth()).addClass('active');
+            }
+
+            html = '';
+            year = parseInt(year/10, 10) * 10;
+            var yearCont = this.picker.find('.datepicker-years')
+                                .find('th:eq(1)')
+                                    .text(year + '-' + (year + 9))
+                                    .end()
+                                .find('td');
+            year -= 1;
+            for (var i = -1; i < 11; i++) {
+                html += '<span class="year'+(i == -1 || i == 10 ? ' old' : '')+(currentYear == year ? ' active' : '')+'">'+year+'</span>';
+                year += 1;
+            }
+            yearCont.html(html);
+        },
+
+        click: function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+            var target = $(e.target).closest('span, td, th');
+            if (target.length == 1) {
+                switch(target[0].nodeName.toLowerCase()) {
+                    case 'th':
+                        switch(target[0].className) {
+                            case 'switch':
+                                this.showMode(1);
+                                break;
+                            case 'prev':
+                            case 'next':
+                                this.viewDate['set'+DPGlobal.modes[this.viewMode].navFnc].call(
+                                    this.viewDate,
+                                    this.viewDate['get'+DPGlobal.modes[this.viewMode].navFnc].call(this.viewDate) +
+                                    DPGlobal.modes[this.viewMode].navStep * (target[0].className == 'prev' ? -1 : 1)
+                                );
+                                this.fill();
+                                break;
+                        }
+                        break;
+                    case 'span':
+                        if (target.is('.month')) {
+                            var month = target.parent().find('span').index(target);
+                            this.viewDate.setMonth(month);
+                        } else {
+                            var year = parseInt(target.text(), 10)||0;
+                            this.viewDate.setFullYear(year);
+                        }
+                        this.showMode(-1);
+                        this.fill();
+                        break;
+                    case 'td':
+                        if (target.is('.day')){
+                            var day = parseInt(target.text(), 10)||1;
+                            var month = this.viewDate.getMonth();
+                            if (target.is('.old')) {
+                                month -= 1;
+                            } else if (target.is('.new')) {
+                                month += 1;
+                            }
+                            var year = this.viewDate.getFullYear();
+                            this.date = new Date(year, month, day,0,0,0,0);
+                            this.viewDate = new Date(year, month, day,0,0,0,0);
+                            this.fill();
+                            this.setValue();
+                            this.element.trigger({
+                                type: 'changeDate',
+                                date: this.date
+                            });
+                        }
+                        break;
+                }
+            }
+        },
+
+        mousedown: function(e){
+            e.stopPropagation();
+            e.preventDefault();
+        },
+
+        showMode: function(dir) {
+            if (dir) {
+                this.viewMode = Math.max(0, Math.min(2, this.viewMode + dir));
+            }
+            this.picker.find('>div').hide().filter('.datepicker-'+DPGlobal.modes[this.viewMode].clsName).show();
+        }
+    };
+
+    $.fn.datepicker = function ( option ) {
+        return this.each(function () {
+            var $this = $(this),
+                data = $this.data('datepicker'),
+                options = typeof option == 'object' && option;
+            if (!data) {
+                $this.data('datepicker', (data = new Datepicker(this, $.extend({}, $.fn.datepicker.defaults,options))));
+            }
+            if (typeof option == 'string') data[option]();
+        });
+    };
+
+    $.fn.datepicker.defaults = {
+    };
+    $.fn.datepicker.Constructor = Datepicker;
+
+    var DPGlobal = {
+        modes: [
+            {
+                clsName: 'days',
+                navFnc: 'Month',
+                navStep: 1
+            },
+            {
+                clsName: 'months',
+                navFnc: 'FullYear',
+                navStep: 1
+            },
+            {
+                clsName: 'years',
+                navFnc: 'FullYear',
+                navStep: 10
+        }],
+        dates:{
+            days: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+            daysShort: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            daysMin: ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"],
+            months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+            monthsShort: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        },
+        isLeapYear: function (year) {
+            return (((year % 4 === 0) && (year % 100 !== 0)) || (year % 400 === 0))
+        },
+        getDaysInMonth: function (year, month) {
+            return [31, (DPGlobal.isLeapYear(year) ? 29 : 28), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month]
+        },
+        parseFormat: function(format){
+            var separator = format.match(/[.\/-].*?/),
+                parts = format.split(/\W+/);
+            if (!separator || !parts || parts.length == 0){
+                throw new Error("Invalid date format.");
+            }
+            return {separator: separator, parts: parts};
+        },
+        parseDate: function(date, format) {
+            var parts = date.split(format.separator),
+                date = new Date(1970, 1, 1, 0, 0, 0),
+                val;
+            if (parts.length == format.parts.length) {
+                for (var i=0, cnt = format.parts.length; i < cnt; i++) {
+                    val = parseInt(parts[i], 10)||1;
+                    switch(format.parts[i]) {
+                        case 'dd':
+                        case 'd':
+                            date.setDate(val);
+                            break;
+                        case 'mm':
+                        case 'm':
+                            date.setMonth(val - 1);
+                            break;
+                        case 'yy':
+                            date.setFullYear(2000 + val);
+                            break;
+                        case 'yyyy':
+                            date.setFullYear(val);
+                            break;
+                    }
+                }
+            }
+            return date;
+        },
+        formatDate: function(date, format){
+            var val = {
+                d: date.getDate(),
+                m: date.getMonth() + 1,
+                yy: date.getFullYear().toString().substring(2),
+                yyyy: date.getFullYear()
+            };
+            val.dd = (val.d < 10 ? '0' : '') + val.d;
+            val.mm = (val.m < 10 ? '0' : '') + val.m;
+            var date = [];
+            for (var i=0, cnt = format.parts.length; i < cnt; i++) {
+                date.push(val[format.parts[i]]);
+            }
+            return date.join(format.separator);
+        },
+        headTemplate: '<thead>'+
+                            '<tr>'+
+                                '<th class="prev"><i class="icon-arrow-left"/></th>'+
+                                '<th colspan="5" class="switch"></th>'+
+                                '<th class="next"><i class="icon-arrow-right"/></th>'+
+                            '</tr>'+
+                        '</thead>',
+        contTemplate: '<tbody><tr><td colspan="7"></td></tr></tbody>'
+    };
+    DPGlobal.template = '<div class="datepicker dropdown-menu">'+
+                            '<div class="datepicker-days">'+
+                                '<table class=" table-condensed">'+
+                                    DPGlobal.headTemplate+
+                                    '<tbody></tbody>'+
+                                '</table>'+
+                            '</div>'+
+                            '<div class="datepicker-months">'+
+                                '<table class="table-condensed">'+
+                                    DPGlobal.headTemplate+
+                                    DPGlobal.contTemplate+
+                                '</table>'+
+                            '</div>'+
+                            '<div class="datepicker-years">'+
+                                '<table class="table-condensed">'+
+                                    DPGlobal.headTemplate+
+                                    DPGlobal.contTemplate+
+                                '</table>'+
+                            '</div>'+
+                        '</div>';
 
 }( window.jQuery )
 
@@ -1558,10 +1212,10 @@ var Utility = (function(window,$){
                     });
                 }
             }
-            
+
 
             this.$widget = $(this.getTemplate()).appendTo('body');
-            
+
             this.$widget.on('click', $.proxy(this.widgetClick, this));
 
             if (this.showInputs) {
@@ -1570,7 +1224,7 @@ var Utility = (function(window,$){
                     keypress: $.proxy(this.widgetKeypress, this),
                     change: $.proxy(this.updateFromWidgetInputs, this)
                 });
-            } 
+            }
 
             this.setDefaultTime(this.defaultTime);
         }
@@ -1618,7 +1272,7 @@ var Utility = (function(window,$){
 
         , hideWidget: function(){
             this.$element.trigger('hide');
-            
+
             if (this.template === 'modal') {
                 this.$widget.modal('hide');
             } else {
@@ -1645,11 +1299,11 @@ var Utility = (function(window,$){
             switch (e.keyCode) {
                 case 9: //tab
                     if (this.showMeridian) {
-                        if (input == 'meridian') { 
+                        if (input == 'meridian') {
                             this.hideWidget();
                         }
                     } else {
-                        if (this.showSeconds) { 
+                        if (this.showSeconds) {
                             if (input == 'second') {
                                 this.hideWidget();
                             }
@@ -1713,7 +1367,7 @@ var Utility = (function(window,$){
                             this.highlightNextUnit();
                         }
                     } else {
-                        if (this.showSeconds) { 
+                        if (this.showSeconds) {
                             if (this.highlightedUnit != 'second') {
                                 e.preventDefault();
                                 this.highlightNextUnit();
@@ -1772,7 +1426,7 @@ var Utility = (function(window,$){
                     this.updateElement();
                 break;
             }
-            
+
             if (e.keyCode !== 0 && e.keyCode !== 8 && e.keyCode !== 9 && e.keyCode !== 46) {
                 e.preventDefault();
             }
@@ -1793,7 +1447,7 @@ var Utility = (function(window,$){
 
             if (isNaN(this.hour)) {
                 this.hour = 0;
-            } 
+            }
             if (isNaN(this.minute)) {
                 this.minute = 0;
             }
@@ -1809,7 +1463,7 @@ var Utility = (function(window,$){
                     this.meridian = 'AM';
                 } else if (this.meridian == 'pm' || this.meridian == 'p') {
                     this.meridian = 'PM';
-                } 
+                }
 
                 if (this.meridian != 'AM' && this.meridian != 'PM') {
                     this.meridian = 'AM';
@@ -1970,13 +1624,13 @@ var Utility = (function(window,$){
         }
 
         , updateFromWidgetInputs: function () {
-            var time = $('input.bootstrap-timepicker-hour', this.$widget).val() + ':' + 
+            var time = $('input.bootstrap-timepicker-hour', this.$widget).val() + ':' +
                        $('input.bootstrap-timepicker-minute', this.$widget).val() +
-                       (this.showSeconds ? 
-                           ':' + $('input.bootstrap-timepicker-second', this.$widget).val() 
+                       (this.showSeconds ?
+                           ':' + $('input.bootstrap-timepicker-second', this.$widget).val()
                         : '') +
-                       (this.showMeridian ? 
-                           ' ' + $('input.bootstrap-timepicker-meridian', this.$widget).val() 
+                       (this.showMeridian ?
+                           ' ' + $('input.bootstrap-timepicker-meridian', this.$widget).val()
                         : '');
 
             this.setValues(time);
@@ -2062,25 +1716,25 @@ var Utility = (function(window,$){
 
         , highlightHour: function() {
             this.highlightedUnit = 'hour';
-            this.$element.get(0).setSelectionRange(0,2); 
+            this.$element.get(0).setSelectionRange(0,2);
         }
 
         , highlightMinute: function() {
             this.highlightedUnit = 'minute';
-            this.$element.get(0).setSelectionRange(3,5); 
+            this.$element.get(0).setSelectionRange(3,5);
         }
 
         , highlightSecond: function() {
             this.highlightedUnit = 'second';
-            this.$element.get(0).setSelectionRange(6,8); 
+            this.$element.get(0).setSelectionRange(6,8);
         }
 
         , highlightMeridian: function() {
             this.highlightedUnit = 'meridian';
             if (this.showSeconds) {
-                this.$element.get(0).setSelectionRange(9,11); 
+                this.$element.get(0).setSelectionRange(9,11);
             } else {
-                this.$element.get(0).setSelectionRange(6,8); 
+                this.$element.get(0).setSelectionRange(6,8);
             }
         }
 
@@ -2102,7 +1756,7 @@ var Utility = (function(window,$){
             if (this.showMeridian) {
                 if (this.hour === 1) {
                     return this.hour = 12;
-                } 
+                }
                 else if (this.hour === 12) {
                     this.toggleMeridian();
                 }
@@ -2179,11 +1833,11 @@ var Utility = (function(window,$){
                                            '<td><a href="#" data-action="incrementHour"><i class="icon-chevron-up"></i></a></td>'+
                                            '<td class="separator">&nbsp;</td>'+
                                            '<td><a href="#" data-action="incrementMinute"><i class="icon-chevron-up"></i></a></td>'+
-                                           (this.showSeconds ? 
+                                           (this.showSeconds ?
                                                '<td class="separator">&nbsp;</td>'+
                                                '<td><a href="#" data-action="incrementSecond"><i class="icon-chevron-up"></i></a></td>'
                                            : '') +
-                                           (this.showMeridian ? 
+                                           (this.showMeridian ?
                                                '<td class="separator">&nbsp;</td>'+
                                                '<td class="meridian-column"><a href="#" data-action="toggleMeridian"><i class="icon-chevron-up"></i></a></td>'
                                            : '') +
@@ -2192,11 +1846,11 @@ var Utility = (function(window,$){
                                            '<td>'+ hourTemplate +'</td> '+
                                            '<td class="separator">:</td>'+
                                            '<td>'+ minuteTemplate +'</td> '+
-                                           (this.showSeconds ? 
+                                           (this.showSeconds ?
                                                 '<td class="separator">:</td>'+
                                                 '<td>'+ secondTemplate +'</td>'
                                            : '') +
-                                           (this.showMeridian ? 
+                                           (this.showMeridian ?
                                                 '<td class="separator">&nbsp;</td>'+
                                                 '<td>'+ meridianTemplate +'</td>'
                                            : '') +
@@ -2205,11 +1859,11 @@ var Utility = (function(window,$){
                                            '<td><a href="#" data-action="decrementHour"><i class="icon-chevron-down"></i></a></td>'+
                                            '<td class="separator"></td>'+
                                            '<td><a href="#" data-action="decrementMinute"><i class="icon-chevron-down"></i></a></td>'+
-                                           (this.showSeconds ? 
+                                           (this.showSeconds ?
                                                 '<td class="separator">&nbsp;</td>'+
-                                                '<td><a href="#" data-action="decrementSecond"><i class="icon-chevron-down"></i></a></td>' 
+                                                '<td><a href="#" data-action="decrementSecond"><i class="icon-chevron-down"></i></a></td>'
                                            : '') +
-                                           (this.showMeridian ? 
+                                           (this.showMeridian ?
                                                 '<td class="separator">&nbsp;</td>'+
                                                 '<td><a href="#" data-action="toggleMeridian"><i class="icon-chevron-down"></i></a></td>'
                                            : '') +
@@ -2231,14 +1885,14 @@ var Utility = (function(window,$){
                                        '<a href="#" class="btn btn-primary" data-dismiss="modal">Ok</a>'+
                                    '</div>'+
                                '</div>';
-                    
+
                 break;
                 case 'dropdown':
                     template = '<div class="bootstrap-timepicker dropdown-menu">'+
                                     templateContent +
                                '</div>';
                 break;
-                
+
             }
             return template;
         }
@@ -2296,179 +1950,178 @@ var Utility = (function(window,$){
 
 (function( $ ) {
 
-	var	escapeable = /["\\\x00-\x1f\x7f-\x9f]/g,
-		meta = {
-			'\b': '\\b',
-			'\t': '\\t',
-			'\n': '\\n',
-			'\f': '\\f',
-			'\r': '\\r',
-			'"' : '\\"',
-			'\\': '\\\\'
-		};
+    var    escapeable = /["\\\x00-\x1f\x7f-\x9f]/g,
+        meta = {
+            '\b': '\\b',
+            '\t': '\\t',
+            '\n': '\\n',
+            '\f': '\\f',
+            '\r': '\\r',
+            '"' : '\\"',
+            '\\': '\\\\'
+        };
 
-	/**
-	 * jQuery.toJSON
-	 * Converts the given argument into a JSON respresentation.
-	 *
-	 * @param o {Mixed} The json-serializble *thing* to be converted
-	 *
-	 * If an object has a toJSON prototype, that will be used to get the representation.
-	 * Non-integer/string keys are skipped in the object, as are keys that point to a
-	 * function.
-	 *
-	 */
-	$.toJSON = typeof JSON === 'object' && JSON.stringify
-		? JSON.stringify
-		: function( o ) {
+    /**
+     * jQuery.toJSON
+     * Converts the given argument into a JSON respresentation.
+     *
+     * @param o {Mixed} The json-serializble *thing* to be converted
+     *
+     * If an object has a toJSON prototype, that will be used to get the representation.
+     * Non-integer/string keys are skipped in the object, as are keys that point to a
+     * function.
+     *
+     */
+    $.toJSON = typeof JSON === 'object' && JSON.stringify
+        ? JSON.stringify
+        : function( o ) {
 
-		if ( o === null ) {
-			return 'null';
-		}
+        if ( o === null ) {
+            return 'null';
+        }
 
-		var type = typeof o;
+        var type = typeof o;
 
-		if ( type === 'undefined' ) {
-			return undefined;
-		}
-		if ( type === 'number' || type === 'boolean' ) {
-			return '' + o;
-		}
-		if ( type === 'string') {
-			return $.quoteString( o );
-		}
-		if ( type === 'object' ) {
-			if ( typeof o.toJSON === 'function' ) {
-				return $.toJSON( o.toJSON() );
-			}
-			if ( o.constructor === Date ) {
-				var	month = o.getUTCMonth() + 1,
-					day = o.getUTCDate(),
-					year = o.getUTCFullYear(),
-					hours = o.getUTCHours(),
-					minutes = o.getUTCMinutes(),
-					seconds = o.getUTCSeconds(),
-					milli = o.getUTCMilliseconds();
+        if ( type === 'undefined' ) {
+            return undefined;
+        }
+        if ( type === 'number' || type === 'boolean' ) {
+            return '' + o;
+        }
+        if ( type === 'string') {
+            return $.quoteString( o );
+        }
+        if ( type === 'object' ) {
+            if ( typeof o.toJSON === 'function' ) {
+                return $.toJSON( o.toJSON() );
+            }
+            if ( o.constructor === Date ) {
+                var    month = o.getUTCMonth() + 1,
+                    day = o.getUTCDate(),
+                    year = o.getUTCFullYear(),
+                    hours = o.getUTCHours(),
+                    minutes = o.getUTCMinutes(),
+                    seconds = o.getUTCSeconds(),
+                    milli = o.getUTCMilliseconds();
 
-				if ( month < 10 ) {
-					month = '0' + month;
-				}
-				if ( day < 10 ) {
-					day = '0' + day;
-				}
-				if ( hours < 10 ) {
-					hours = '0' + hours;
-				}
-				if ( minutes < 10 ) {
-					minutes = '0' + minutes;
-				}
-				if ( seconds < 10 ) {
-					seconds = '0' + seconds;
-				}
-				if ( milli < 100 ) {
-					milli = '0' + milli;
-				}
-				if ( milli < 10 ) {
-					milli = '0' + milli;
-				}
-				return '"' + year + '-' + month + '-' + day + 'T' +
-					hours + ':' + minutes + ':' + seconds +
-					'.' + milli + 'Z"';
-			}
-			if ( o.constructor === Array ) {
-				var ret = [];
-				for ( var i = 0; i < o.length; i++ ) {
-					ret.push( $.toJSON( o[i] ) || 'null' );
-				}
-				return '[' + ret.join(',') + ']';
-			}
-			var	name,
-				val,
-				pairs = [];
-			for ( var k in o ) {
-				type = typeof k;
-				if ( type === 'number' ) {
-					name = '"' + k + '"';
-				} else if (type === 'string') {
-					name = $.quoteString(k);
-				} else {
-					// Keys must be numerical or string. Skip others
-					continue;
-				}
-				type = typeof o[k];
+                if ( month < 10 ) {
+                    month = '0' + month;
+                }
+                if ( day < 10 ) {
+                    day = '0' + day;
+                }
+                if ( hours < 10 ) {
+                    hours = '0' + hours;
+                }
+                if ( minutes < 10 ) {
+                    minutes = '0' + minutes;
+                }
+                if ( seconds < 10 ) {
+                    seconds = '0' + seconds;
+                }
+                if ( milli < 100 ) {
+                    milli = '0' + milli;
+                }
+                if ( milli < 10 ) {
+                    milli = '0' + milli;
+                }
+                return '"' + year + '-' + month + '-' + day + 'T' +
+                    hours + ':' + minutes + ':' + seconds +
+                    '.' + milli + 'Z"';
+            }
+            if ( o.constructor === Array ) {
+                var ret = [];
+                for ( var i = 0; i < o.length; i++ ) {
+                    ret.push( $.toJSON( o[i] ) || 'null' );
+                }
+                return '[' + ret.join(',') + ']';
+            }
+            var    name,
+                val,
+                pairs = [];
+            for ( var k in o ) {
+                type = typeof k;
+                if ( type === 'number' ) {
+                    name = '"' + k + '"';
+                } else if (type === 'string') {
+                    name = $.quoteString(k);
+                } else {
+                    // Keys must be numerical or string. Skip others
+                    continue;
+                }
+                type = typeof o[k];
 
-				if ( type === 'function' || type === 'undefined' ) {
-					// Invalid values like these return undefined
-					// from toJSON, however those object members
-					// shouldn't be included in the JSON string at all.
-					continue;
-				}
-				val = $.toJSON( o[k] );
-				pairs.push( name + ':' + val );
-			}
-			return '{' + pairs.join( ',' ) + '}';
-		}
-	};
+                if ( type === 'function' || type === 'undefined' ) {
+                    // Invalid values like these return undefined
+                    // from toJSON, however those object members
+                    // shouldn't be included in the JSON string at all.
+                    continue;
+                }
+                val = $.toJSON( o[k] );
+                pairs.push( name + ':' + val );
+            }
+            return '{' + pairs.join( ',' ) + '}';
+        }
+    };
 
-	/**
-	 * jQuery.evalJSON
-	 * Evaluates a given piece of json source.
-	 *
-	 * @param src {String}
-	 */
-	$.evalJSON = typeof JSON === 'object' && JSON.parse
-		? JSON.parse
-		: function( src ) {
-		return eval('(' + src + ')');
-	};
+    /**
+     * jQuery.evalJSON
+     * Evaluates a given piece of json source.
+     *
+     * @param src {String}
+     */
+    $.evalJSON = typeof JSON === 'object' && JSON.parse
+        ? JSON.parse
+        : function( src ) {
+        return eval('(' + src + ')');
+    };
 
-	/**
-	 * jQuery.secureEvalJSON
-	 * Evals JSON in a way that is *more* secure.
-	 *
-	 * @param src {String}
-	 */
-	$.secureEvalJSON = typeof JSON === 'object' && JSON.parse
-		? JSON.parse
-		: function( src ) {
+    /**
+     * jQuery.secureEvalJSON
+     * Evals JSON in a way that is *more* secure.
+     *
+     * @param src {String}
+     */
+    $.secureEvalJSON = typeof JSON === 'object' && JSON.parse
+        ? JSON.parse
+        : function( src ) {
 
-		var filtered = 
-			src
-			.replace( /\\["\\\/bfnrtu]/g, '@' )
-			.replace( /"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']')
-			.replace( /(?:^|:|,)(?:\s*\[)+/g, '');
+        var filtered =
+            src
+            .replace( /\\["\\\/bfnrtu]/g, '@' )
+            .replace( /"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']')
+            .replace( /(?:^|:|,)(?:\s*\[)+/g, '');
 
-		if ( /^[\],:{}\s]*$/.test( filtered ) ) {
-			return eval( '(' + src + ')' );
-		} else {
-			throw new SyntaxError( 'Error parsing JSON, source is not valid.' );
-		}
-	};
+        if ( /^[\],:{}\s]*$/.test( filtered ) ) {
+            return eval( '(' + src + ')' );
+        } else {
+            throw new SyntaxError( 'Error parsing JSON, source is not valid.' );
+        }
+    };
 
-	/**
-	 * jQuery.quoteString
-	 * Returns a string-repr of a string, escaping quotes intelligently.
-	 * Mostly a support function for toJSON.
-	 * Examples:
-	 * >>> jQuery.quoteString('apple')
-	 * "apple"
-	 *
-	 * >>> jQuery.quoteString('"Where are we going?", she asked.')
-	 * "\"Where are we going?\", she asked."
-	 */
-	$.quoteString = function( string ) {
-		if ( string.match( escapeable ) ) {
-			return '"' + string.replace( escapeable, function( a ) {
-				var c = meta[a];
-				if ( typeof c === 'string' ) {
-					return c;
-				}
-				c = a.charCodeAt();
-				return '\\u00' + Math.floor(c / 16).toString(16) + (c % 16).toString(16);
-			}) + '"';
-		}
-		return '"' + string + '"';
-	};
+    /**
+     * jQuery.quoteString
+     * Returns a string-repr of a string, escaping quotes intelligently.
+     * Mostly a support function for toJSON.
+     * Examples:
+     * >>> jQuery.quoteString('apple')
+     * "apple"
+     *
+     * >>> jQuery.quoteString('"Where are we going?", she asked.')
+     * "\"Where are we going?\", she asked."
+     */
+    $.quoteString = function( string ) {
+        if ( string.match( escapeable ) ) {
+            return '"' + string.replace( escapeable, function( a ) {
+                var c = meta[a];
+                if ( typeof c === 'string' ) {
+                    return c;
+                }
+                c = a.charCodeAt();
+                return '\\u00' + Math.floor(c / 16).toString(16) + (c % 16).toString(16);
+            }) + '"';
+        }
+        return '"' + string + '"';
+    };
 
 })( jQuery );
-
