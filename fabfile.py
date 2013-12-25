@@ -1,7 +1,7 @@
 from fabric.api import env, cd, run
 
 
-env.hosts = ['zhigang@yamaha.dreamhost.com']
+env.hosts = ['zhigang@zhigang.org']
 
 
 def init():
