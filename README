@@ -6,8 +6,6 @@
 
 * 功能：在Google Calendar上按照农历添加重复事件（只支持以年为单位）。主要目的就是计划亲朋好友农历生日。
 
-* 在线访问： http://zhigang.org/google-chinese-lunar-calendar/
-
 * 源代码： https://github.com/zhigang/google-chinese-lunar-calendar
 
 * 源代码使用的开源协议： Apache License <http://www.apache.org/licenses/LICENSE-2.0>
