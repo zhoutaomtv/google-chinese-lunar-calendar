@@ -274,7 +274,7 @@
           break;
        default :
           s = nStr2[Math.floor(d/10)];
-          s += nStr1[d%10];
+          s += nStr1[Math.floor(d)%10];
     }
     return(s);
   }
